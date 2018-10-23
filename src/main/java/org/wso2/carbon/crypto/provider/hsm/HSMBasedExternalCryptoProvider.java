@@ -2,12 +2,21 @@ package org.wso2.carbon.crypto.provider.hsm;
 
 import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Session;
+import iaik.pkcs.pkcs11.objects.AESSecretKey;
 import iaik.pkcs.pkcs11.objects.Certificate;
+import iaik.pkcs.pkcs11.objects.DES2SecretKey;
+import iaik.pkcs.pkcs11.objects.DES3SecretKey;
+import iaik.pkcs.pkcs11.objects.DESSecretKey;
 import iaik.pkcs.pkcs11.objects.Key;
 import iaik.pkcs.pkcs11.objects.PrivateKey;
 import iaik.pkcs.pkcs11.objects.PublicKey;
 import iaik.pkcs.pkcs11.objects.RSAPrivateKey;
+import iaik.pkcs.pkcs11.objects.SecretKey;
 import iaik.pkcs.pkcs11.objects.X509PublicKeyCertificate;
+import iaik.pkcs.pkcs11.parameters.GcmParameters;
+import iaik.pkcs.pkcs11.parameters.InitializationVectorParameters;
+import iaik.pkcs.pkcs11.parameters.Parameters;
+import iaik.pkcs.pkcs11.wrapper.CK_GCM_PARAMS;
 import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -24,11 +33,16 @@ import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.objecthandlers.Certifi
 import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.objecthandlers.KeyHandler;
 import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.operators.Cipher;
 import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.operators.SignatureHandler;
+import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.util.KeyTemplateGenerator;
 import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.util.MechanismDataHolder;
 import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.util.MechanismResolver;
 import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.util.SessionHandler;
 
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -96,13 +110,7 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
         PrivateKey decryptionKey = (PrivateKey) retrieveKey(privateKeyTemplate);
         Mechanism decryptionMechanism = mechanismResolver.resolveMechanism(
                 new MechanismDataHolder(DECRYPT_MODE, algorithm));
-        Session session = initiateSession();
-        Cipher cipher = new Cipher(session);
-        try {
-            return cipher.decrypt(ciphertext, decryptionKey, decryptionMechanism);
-        } finally {
-            sessionHandler.closeSession(session);
-        }
+        return decrypt(ciphertext, decryptionKey, decryptionMechanism);
     }
 
     @Override
@@ -118,13 +126,7 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
         PublicKey encryptionKey = (PublicKey) retrieveKey(publicKeyTemplate);
         Mechanism encryptionMechanism = mechanismResolver.resolveMechanism(
                 new MechanismDataHolder(ENCRYPT_MODE, algorithm));
-        Session session = initiateSession();
-        Cipher cipher = new Cipher(session);
-        try {
-            return cipher.encrypt(data, encryptionKey, encryptionMechanism);
-        } finally {
-            sessionHandler.closeSession(session);
-        }
+        return encrypt(data, encryptionKey, encryptionMechanism);
     }
 
     @Override
@@ -214,7 +216,48 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
                                                 String javaSecurityProvider, CryptoContext cryptoContext,
                                                 CertificateInfo certificateInfo) throws CryptoException {
 
-        return null;
+        MechanismDataHolder mechanismDataHolder = new MechanismDataHolder(ENCRYPT_MODE, symmetricAlgorithm,
+                hybridEncryptionInput.getAuthData());
+        Mechanism symmetricMechanism = mechanismResolver.resolveMechanism(mechanismDataHolder);
+        SecretKey encryptionKey = getSymmetricKey(symmetricAlgorithm, null, true);
+        byte[] encryptedData = encrypt(hybridEncryptionInput.getClearData(), encryptionKey, symmetricMechanism);
+        byte[] encryptedKey;
+        if (encryptionKey instanceof AESSecretKey) {
+            encryptedKey = encrypt(((AESSecretKey) encryptionKey).getValue().getByteArrayValue(),
+                    asymmetricAlgorithm, javaSecurityProvider, cryptoContext, certificateInfo);
+        } else if (encryptionKey instanceof DESSecretKey) {
+            encryptedKey = encrypt(((DESSecretKey) encryptionKey).getValue().getByteArrayValue(),
+                    asymmetricAlgorithm, javaSecurityProvider, cryptoContext, certificateInfo);
+        } else if (encryptionKey instanceof DES2SecretKey) {
+            encryptedKey = encrypt(((DES2SecretKey) encryptionKey).getValue().getByteArrayValue(),
+                    asymmetricAlgorithm, javaSecurityProvider, cryptoContext, certificateInfo);
+        } else if (encryptionKey instanceof DES3SecretKey) {
+            encryptedKey = encrypt(((DES3SecretKey) encryptionKey).getValue().getByteArrayValue(),
+                    asymmetricAlgorithm, javaSecurityProvider, cryptoContext, certificateInfo);
+        } else {
+            String errorMessage = String.format("Symmetric encryption key instance '%s' provided for hybrid " +
+                    "encryption is not supported by the provider", encryptionKey.getClass().getName());
+            throw new CryptoException(errorMessage);
+        }
+        HybridEncryptionOutput hybridEncryptionOutput;
+        Parameters paramObject = symmetricMechanism.getParameters();
+        if (paramObject instanceof GcmParameters) {
+            CK_GCM_PARAMS gcmParams = (CK_GCM_PARAMS) paramObject.getPKCS11ParamsObject();
+            GCMParameterSpec gcmParameterSpec = new GCMParameterSpec((int) gcmParams.ulTagBits, gcmParams.pIv);
+            int tagPos = encryptedData.length - (int) (gcmParams.ulTagBits) / 8;
+            byte[] cipherData = subArray(encryptedData, 0, tagPos);
+            byte[] authTag = subArray(encryptedData, tagPos, (int) (gcmParams.ulTagBits) / 8);
+            hybridEncryptionOutput = new HybridEncryptionOutput(cipherData, encryptedKey, gcmParams.pAAD, authTag, gcmParameterSpec);
+        } else if (paramObject instanceof InitializationVectorParameters) {
+            IvParameterSpec ivParameterSpec = new IvParameterSpec(((InitializationVectorParameters)
+                    paramObject).getInitializationVector());
+            hybridEncryptionOutput = new HybridEncryptionOutput(encryptedData, encryptedKey, ivParameterSpec);
+        } else {
+            String errorMessage = String.format("Invalid / Unsupported parameter specification for '%s' symmetric " +
+                    "encryption algorithm.", symmetricAlgorithm);
+            throw new CryptoException(errorMessage);
+        }
+        return hybridEncryptionOutput;
     }
 
     @Override
@@ -222,7 +265,25 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
                                 String javaSecurityProvider, CryptoContext cryptoContext,
                                 PrivateKeyInfo privateKeyInfo) throws CryptoException {
 
-        return new byte[0];
+        byte[] decryptionKeyValue = decrypt(hybridDecryptionInput.getEncryptedSymmetricKey(), asymmetricAlgorithm,
+                javaSecurityProvider, cryptoContext, privateKeyInfo);
+        SecretKey decryptionKey = getSymmetricKey(symmetricAlgorithm, decryptionKeyValue, false);
+        MechanismDataHolder mechanismDataHolder = new MechanismDataHolder(DECRYPT_MODE, symmetricAlgorithm,
+                hybridDecryptionInput.getParameterSpec(), hybridDecryptionInput.getAuthData());
+        Mechanism decryptionMechanism = mechanismResolver.resolveMechanism(mechanismDataHolder);
+        if (hybridDecryptionInput.getAuthTag() != null) {
+            try {
+                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                outputStream.write(hybridDecryptionInput.getCipherData());
+                outputStream.write(hybridDecryptionInput.getAuthTag());
+                return decrypt(outputStream.toByteArray(), decryptionKey, decryptionMechanism);
+            } catch (IOException e) {
+                String errorMessage = String.format("Error occurred while decrypting hybrid encrypted data.");
+                throw new CryptoException(errorMessage, e);
+            }
+        } else {
+            return decrypt(hybridDecryptionInput.getCipherData(), decryptionKey, decryptionMechanism);
+        }
     }
 
     protected Session initiateSession() throws CryptoException {
@@ -241,7 +302,7 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
 
     protected void failIfMethodParametersInvalid(String algorithm) throws CryptoException {
 
-        if (!(algorithm != null && MechanismResolver.getMechanisms().containsKey(algorithm))) {
+        if (!(algorithm != null && MechanismResolver.getSupportedMechanisms().containsKey(algorithm))) {
             String errorMessage = String.format("Requested algorithm '%s' is not valid/supported by the " +
                     "provider '%s'.", algorithm);
             if (log.isDebugEnabled()) {
@@ -256,7 +317,7 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
         Session session = initiateSession();
         KeyHandler keyHandler = new KeyHandler(session);
         try {
-            return (Key) keyHandler.retrieveKey(keyTemplate);
+            return keyHandler.retrieveKey(keyTemplate);
         } finally {
             sessionHandler.closeSession(session);
         }
@@ -274,5 +335,93 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
         } finally {
             sessionHandler.closeSession(session);
         }
+    }
+
+    protected byte[] encrypt(byte[] data, Key encryptionKey, Mechanism encryptionMechanism) throws CryptoException {
+
+        Session session = initiateSession();
+        Cipher cipher = new Cipher(session);
+        try {
+            return cipher.encrypt(data, encryptionKey, encryptionMechanism);
+        } finally {
+            sessionHandler.closeSession(session);
+        }
+    }
+
+    protected byte[] decrypt(byte[] data, Key decryptionKey, Mechanism decryptionMechanism) throws CryptoException {
+
+        Session session = initiateSession();
+        Cipher cipher = new Cipher(session);
+        try {
+            return cipher.decrypt(data, decryptionKey, decryptionMechanism);
+        } finally {
+            sessionHandler.closeSession(session);
+        }
+    }
+
+    protected SecretKey getSymmetricKey(String algorithm, byte[] value, boolean encryptMode) throws CryptoException {
+
+        String[] keySpecification = algorithm.split("/")[0].split("_");
+        String keyType = keySpecification[0];
+        String errorMessage = String.format("Requested key generation is not supported for '%s' " +
+                "algorithm", algorithm);
+        SecretKey secretKeyTemplate;
+        if (encryptMode) {
+            if (keyType.equals("AES")) {
+                long keyLength = 32L;
+                if (keySpecification.length > 1) {
+                    keyLength = Long.parseLong(keySpecification[1]) / 8;
+                }
+                secretKeyTemplate = KeyTemplateGenerator.generateAESKeyTemplate();
+                ((AESSecretKey) secretKeyTemplate).getValueLen().setLongValue(keyLength);
+            } else if (keyType.equals("DES")) {
+                secretKeyTemplate = KeyTemplateGenerator.generateDESKeyTemplate();
+            } else if (keyType.equals("DES2")) {
+                secretKeyTemplate = KeyTemplateGenerator.generateDES2KeyTemplate();
+            } else if (keyType.equals("3DES")) {
+                secretKeyTemplate = KeyTemplateGenerator.generateDES3KeyTemplate();
+            } else {
+                throw new CryptoException(errorMessage);
+            }
+        } else {
+            if (keyType.equals("AES")) {
+                secretKeyTemplate = KeyTemplateGenerator.generateAESKeyTemplate();
+                ((AESSecretKey) secretKeyTemplate).getValue().setValue(value);
+            } else if (keyType.equals("DES")) {
+                secretKeyTemplate = KeyTemplateGenerator.generateDESKeyTemplate();
+                ((DESSecretKey) secretKeyTemplate).getValue().setValue(value);
+            } else if (keyType.equals("DES2")) {
+                secretKeyTemplate = KeyTemplateGenerator.generateDES2KeyTemplate();
+                ((DES2SecretKey) secretKeyTemplate).getValue().setValue(value);
+            } else if (keyType.equals("3DES")) {
+                secretKeyTemplate = KeyTemplateGenerator.generateDES3KeyTemplate();
+                ((DES3SecretKey) secretKeyTemplate).getValue().setValue(value);
+            } else {
+                throw new CryptoException(errorMessage);
+            }
+        }
+        return generateKey(secretKeyTemplate, encryptMode, keyType);
+    }
+
+    protected SecretKey generateKey(SecretKey secretKeyTemplate, boolean encryptMode, String keyGenAlgo) throws CryptoException {
+
+        Session session = initiateSession();
+        KeyHandler keyHandler = new KeyHandler(session);
+        try {
+            if (encryptMode) {
+                return keyHandler.generateSecretKey(secretKeyTemplate, mechanismResolver.resolveMechanism(
+                        new MechanismDataHolder(ENCRYPT_MODE, keyGenAlgo)));
+            } else {
+                return keyHandler.getSecretKeyHandle(secretKeyTemplate);
+            }
+        } finally {
+            sessionHandler.closeSession(session);
+        }
+    }
+
+    private byte[] subArray(byte[] byteArray, int beginIndex, int length) {
+        byte[] subArray = new byte[length];
+        System.arraycopy(byteArray, beginIndex, subArray, 0, subArray.length);
+        return subArray;
     }
 }

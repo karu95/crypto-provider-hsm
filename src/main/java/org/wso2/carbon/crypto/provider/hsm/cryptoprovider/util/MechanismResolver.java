@@ -23,7 +23,7 @@ public class MechanismResolver {
 
     private static MechanismResolver mechanismResolver;
     private static SecureRandom random = new SecureRandom();
-    private static final HashMap<String, Long> mechanisms = new HashMap<String, Long>() {{
+    private static HashMap<String, Long> mechanisms = new HashMap<String, Long>() {{
 
         /*
          * Key generation mechanisms
@@ -86,9 +86,6 @@ public class MechanismResolver {
         /*
          * Sign/Verify mechanisms
          */
-        put("RawDSA", PKCS11Constants.CKM_DSA);
-        put("SHA1withDSA", PKCS11Constants.CKM_DSA_SHA1);
-
         //ECDSA sign/verify mechanisms
         put("NONEwithECDSA", PKCS11Constants.CKM_ECDSA);
         put("SHA1withECDSA", PKCS11Constants.CKM_ECDSA_SHA1);
@@ -109,7 +106,8 @@ public class MechanismResolver {
         put("SHA512withRSAandMGF1", PKCS11Constants.CKM_SHA512_RSA_PKCS_PSS);
 
         //DSA sign/verify mechanisms
-        put("SHA1withDSA", PKCS11Constants.CKM_DSA_SHA1);
+        put("RawDSA", PKCS11Constants.CKM_DSA);
+        put("SHA1withDSA", PKCS11Constants.CKM_DSA_SHA1);;
 
         /*
          * Digest mechanisms
@@ -124,7 +122,7 @@ public class MechanismResolver {
         put("RipeMd160", PKCS11Constants.CKM_RIPEMD160);
     }};
 
-    private static final HashMap<Long, String> parameterRequiredMechanisms = new HashMap<Long, String>() {{
+    private static HashMap<Long, String> parameterRequiredMechanisms = new HashMap<Long, String>() {{
         put(PKCS11Constants.CKM_AES_CBC, "IV16");
         put(PKCS11Constants.CKM_AES_CBC_PAD, "IV16");
         put(PKCS11Constants.CKM_AES_GCM, "GCM");
@@ -167,7 +165,7 @@ public class MechanismResolver {
      *
      * @return HashMap of mechanisms.
      */
-    public static HashMap<String, Long> getMechanisms() {
+    public static HashMap<String, Long> getSupportedMechanisms() {
         return mechanisms;
     }
 
@@ -250,21 +248,30 @@ public class MechanismResolver {
             if (ivParameterSpec != null) {
                 return new InitializationVectorParameters(ivParameterSpec.getIV());
             } else {
-                throw new CryptoException();
+                String errorMessage = "Initialization vector parameters can't be null";
+                throw new CryptoException(errorMessage);
             }
         } else {
-            throw new CryptoException();
+            String errorMessage = "IV vectors are not defined for sign/verify operating modes.";
+            throw new CryptoException(errorMessage);
         }
     }
 
     protected GcmParameters getGCMParameters(GCMParameterSpec gcmParameterSpec, int operatingMode, int ivSize,
                                              byte[] authData) throws CryptoException {
+
         if (operatingMode == ENCRYPT_MODE) {
             return new GcmParameters(generateIV(ivSize), authData, 128);
         } else if (operatingMode == DECRYPT_MODE) {
-            return new GcmParameters(gcmParameterSpec.getIV(), authData, gcmParameterSpec.getTLen());
+            if (gcmParameterSpec == null) {
+                return new GcmParameters(gcmParameterSpec.getIV(), authData, gcmParameterSpec.getTLen());
+            } else {
+                String errorMessage = "GCM Parameters can't be null.";
+                throw new CryptoException(errorMessage);
+            }
         } else {
-            throw new CryptoException();
+            String errorMessage = "Invalid mode of operation is requested.";
+            throw new CryptoException(errorMessage);
         }
     }
 

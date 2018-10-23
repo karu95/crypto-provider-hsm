@@ -9,7 +9,7 @@ import org.wso2.carbon.crypto.api.CryptoException;
 import org.wso2.carbon.crypto.provider.hsm.cryptoprovider.exception.HSMCryptoException;
 
 /**
- * This class is responsible to retrieve certificates from the HSM.
+ * This class is responsible to handle certificate related operations with HSM.
  */
 public class CertificateHandler {
 

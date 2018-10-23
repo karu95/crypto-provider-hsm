@@ -8,17 +8,17 @@ import java.security.spec.AlgorithmParameterSpec;
  */
 public class MechanismDataHolder {
 
-    private final int operatingMode;
-    private final String jceMechanismSpecification;
-    private final AlgorithmParameterSpec algorithmParameterSpec;
-    private final byte[] authData;
+    private int operatingMode;
+    private String jceMechanismSpecification;
+    private AlgorithmParameterSpec algorithmParameterSpec;
+    private byte[] authData;
 
     public MechanismDataHolder(int operatingMode, String jceMechanismSpecification) {
 
         this.operatingMode = operatingMode;
         this.jceMechanismSpecification = jceMechanismSpecification;
-        algorithmParameterSpec = null;
-        authData = null;
+        this.algorithmParameterSpec = null;
+        this.authData = null;
     }
 
     public MechanismDataHolder(int operatingMode, String jceMechanismSpecification, AlgorithmParameterSpec algorithmParameterSpec) {
@@ -26,7 +26,7 @@ public class MechanismDataHolder {
         this.operatingMode = operatingMode;
         this.jceMechanismSpecification = jceMechanismSpecification;
         this.algorithmParameterSpec = algorithmParameterSpec;
-        authData = null;
+        this.authData = null;
     }
 
     public MechanismDataHolder(int operatingMode, String jceMechanismSpecification, AlgorithmParameterSpec algorithmParameterSpec,
@@ -36,6 +36,14 @@ public class MechanismDataHolder {
         this.jceMechanismSpecification = jceMechanismSpecification;
         this.algorithmParameterSpec = algorithmParameterSpec;
         this.authData = authData;
+    }
+
+    public MechanismDataHolder (int operatingMode, String jceMechanismSpecification, byte[] authData) {
+
+        this.operatingMode = operatingMode;
+        this.jceMechanismSpecification = jceMechanismSpecification;
+        this.authData = authData;
+        this.algorithmParameterSpec = null;
     }
 
     public String getJceMechanismSpecification() {

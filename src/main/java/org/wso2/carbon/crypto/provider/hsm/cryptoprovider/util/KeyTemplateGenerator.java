@@ -8,14 +8,13 @@ import iaik.pkcs.pkcs11.objects.SecretKey;
 
 
 /**
- *
+ * This class generates Key templates required for key generation.
  */
 public class KeyTemplateGenerator {
 
-    public static AESSecretKey generateAESKeyTemplate(long valueLength) {
+    public static AESSecretKey generateAESKeyTemplate() {
 
         AESSecretKey aesSecretKeyTemplate = new AESSecretKey();
-        aesSecretKeyTemplate.getValueLen().setLongValue(valueLength);
         updateCommonAttributes(aesSecretKeyTemplate);
         return aesSecretKeyTemplate;
     }

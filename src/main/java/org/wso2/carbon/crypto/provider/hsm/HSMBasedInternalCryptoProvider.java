@@ -49,7 +49,7 @@ public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
         this.serverConfigurationService = serverConfigurationService;
         this.keyAlias = serverConfigurationService.getFirstProperty(HSM_BASED_INTERNAL_PROVIDER_KEY_ALIAS_PATH);
         if (StringUtils.isBlank(keyAlias)) {
-            throw new CryptoException();
+            throw new CryptoException("Key alias provided for internal crypto needs can't be null.");
         }
         sessionHandler = SessionHandler.getDefaultSessionHandler(serverConfigurationService);
         mechanismResolver = MechanismResolver.getInstance();
@@ -105,7 +105,7 @@ public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
     protected void failIfMethodParametersInvalid(String algorithm, byte[] data)
             throws CryptoException {
 
-        if (!(algorithm != null && MechanismResolver.getMechanisms().containsKey(algorithm))) {
+        if (!(algorithm != null && MechanismResolver.getSupportedMechanisms().containsKey(algorithm))) {
             String errorMessage = String.format("Requested algorithm '%s' is not valid/supported by the " +
                     "HSM based Crypto Provider.", algorithm);
             if (log.isDebugEnabled()) {
@@ -129,7 +129,7 @@ public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
         KeyHandler keyHandler = new KeyHandler(session);
         Key retrievedKey;
         try {
-            retrievedKey = (Key) keyHandler.retrieveKey(keyTemplate);
+            retrievedKey = keyHandler.retrieveKey(keyTemplate);
         } finally {
             sessionHandler.closeSession(session);
         }
