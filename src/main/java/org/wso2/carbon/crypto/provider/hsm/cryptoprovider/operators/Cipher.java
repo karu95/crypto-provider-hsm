@@ -4,6 +4,7 @@ import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Session;
 import iaik.pkcs.pkcs11.TokenException;
 import iaik.pkcs.pkcs11.objects.Key;
+import iaik.pkcs.pkcs11.wrapper.PKCS11Constants;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.crypto.api.CryptoException;
@@ -38,8 +39,7 @@ public class Cipher {
                           Key encryptionKey, Mechanism encryptionMechanism) throws CryptoException {
 
         byte[] encryptedData = null;
-        if (encryptionMechanism.isSingleOperationEncryptDecryptMechanism()
-                || encryptionMechanism.isFullEncryptDecryptMechanism()) {
+        if (isEncryptDecryptMechanism(encryptionMechanism)) {
             try {
                 session.encryptInit(encryptionMechanism, encryptionKey);
                 encryptedData = session.encrypt(dataToBeEncrypted);
@@ -72,8 +72,7 @@ public class Cipher {
                           Key decryptionKey, Mechanism decryptionMechanism) throws CryptoException {
 
         byte[] decryptedData = null;
-        if (decryptionMechanism.isSingleOperationEncryptDecryptMechanism()
-                || decryptionMechanism.isFullEncryptDecryptMechanism()) {
+        if (isEncryptDecryptMechanism(decryptionMechanism)) {
             try {
                 session.decryptInit(decryptionMechanism, decryptionKey);
                 decryptedData = session.decrypt(dataToBeDecrypted);
@@ -91,5 +90,16 @@ public class Cipher {
             throw new CryptoException(errorMessage);
         }
         return decryptedData;
+    }
+
+    private boolean isEncryptDecryptMechanism(Mechanism mechanism) {
+        if (mechanism.isSingleOperationEncryptDecryptMechanism()
+                || mechanism.isFullEncryptDecryptMechanism()) {
+            return true;
+        }
+        if (mechanism.getMechanismCode() == PKCS11Constants.CKM_AES_GCM) {
+            return true;
+        }
+        return false;
     }
 }

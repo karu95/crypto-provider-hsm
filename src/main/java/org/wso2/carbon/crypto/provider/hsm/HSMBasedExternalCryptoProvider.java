@@ -110,7 +110,13 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
         PrivateKey decryptionKey = (PrivateKey) retrieveKey(privateKeyTemplate);
         Mechanism decryptionMechanism = mechanismResolver.resolveMechanism(
                 new MechanismDataHolder(DECRYPT_MODE, algorithm));
-        return decrypt(ciphertext, decryptionKey, decryptionMechanism);
+        Session session = initiateSession();
+        Cipher cipher = new Cipher(session);
+        try {
+            return cipher.decrypt(ciphertext, decryptionKey, decryptionMechanism);
+        } finally {
+            sessionHandler.closeSession(session);
+        }
     }
 
     @Override
@@ -126,7 +132,13 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
         PublicKey encryptionKey = (PublicKey) retrieveKey(publicKeyTemplate);
         Mechanism encryptionMechanism = mechanismResolver.resolveMechanism(
                 new MechanismDataHolder(ENCRYPT_MODE, algorithm));
-        return encrypt(data, encryptionKey, encryptionMechanism);
+        Session session = initiateSession();
+        Cipher cipher = new Cipher(session);
+        try {
+            return cipher.encrypt(data, encryptionKey, encryptionMechanism);
+        } finally {
+            sessionHandler.closeSession(session);
+        }
     }
 
     @Override
@@ -219,8 +231,15 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
         MechanismDataHolder mechanismDataHolder = new MechanismDataHolder(ENCRYPT_MODE, symmetricAlgorithm,
                 hybridEncryptionInput.getAuthData());
         Mechanism symmetricMechanism = mechanismResolver.resolveMechanism(mechanismDataHolder);
-        SecretKey encryptionKey = getSymmetricKey(symmetricAlgorithm, null, true);
-        byte[] encryptedData = encrypt(hybridEncryptionInput.getClearData(), encryptionKey, symmetricMechanism);
+        Session session = initiateSession();
+        byte[] encryptedData;
+        SecretKey encryptionKey = getSymmetricKey(session, symmetricAlgorithm, null, true);
+        try {
+            Cipher cipher = new Cipher(session);
+            encryptedData = cipher.encrypt(hybridEncryptionInput.getClearData(), encryptionKey, symmetricMechanism);
+        } finally {
+            sessionHandler.closeSession(session);
+        }
         byte[] encryptedKey;
         if (encryptionKey instanceof AESSecretKey) {
             encryptedKey = encrypt(((AESSecretKey) encryptionKey).getValue().getByteArrayValue(),
@@ -267,22 +286,28 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
 
         byte[] decryptionKeyValue = decrypt(hybridDecryptionInput.getEncryptedSymmetricKey(), asymmetricAlgorithm,
                 javaSecurityProvider, cryptoContext, privateKeyInfo);
-        SecretKey decryptionKey = getSymmetricKey(symmetricAlgorithm, decryptionKeyValue, false);
         MechanismDataHolder mechanismDataHolder = new MechanismDataHolder(DECRYPT_MODE, symmetricAlgorithm,
                 hybridDecryptionInput.getParameterSpec(), hybridDecryptionInput.getAuthData());
         Mechanism decryptionMechanism = mechanismResolver.resolveMechanism(mechanismDataHolder);
-        if (hybridDecryptionInput.getAuthTag() != null) {
-            try {
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                outputStream.write(hybridDecryptionInput.getCipherData());
-                outputStream.write(hybridDecryptionInput.getAuthTag());
-                return decrypt(outputStream.toByteArray(), decryptionKey, decryptionMechanism);
-            } catch (IOException e) {
-                String errorMessage = String.format("Error occurred while decrypting hybrid encrypted data.");
-                throw new CryptoException(errorMessage, e);
+        Session session = initiateSession();
+        try {
+            SecretKey decryptionKey = getSymmetricKey(session, symmetricAlgorithm, decryptionKeyValue, false);
+            Cipher cipher = new Cipher(session);
+            if (hybridDecryptionInput.getAuthTag() != null) {
+                try {
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+                    outputStream.write(hybridDecryptionInput.getCipherData());
+                    outputStream.write(hybridDecryptionInput.getAuthTag());
+                    return cipher.decrypt(outputStream.toByteArray(), decryptionKey, decryptionMechanism);
+                } catch (IOException e) {
+                    String errorMessage = String.format("Error occurred while decrypting hybrid encrypted data.");
+                    throw new CryptoException(errorMessage, e);
+                }
+            } else {
+                return cipher.decrypt(hybridDecryptionInput.getCipherData(), decryptionKey, decryptionMechanism);
             }
-        } else {
-            return decrypt(hybridDecryptionInput.getCipherData(), decryptionKey, decryptionMechanism);
+        }finally {
+            sessionHandler.closeSession(session);
         }
     }
 
@@ -303,8 +328,7 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
     protected void failIfMethodParametersInvalid(String algorithm) throws CryptoException {
 
         if (!(algorithm != null && MechanismResolver.getSupportedMechanisms().containsKey(algorithm))) {
-            String errorMessage = String.format("Requested algorithm '%s' is not valid/supported by the " +
-                    "provider '%s'.", algorithm);
+            String errorMessage = String.format("Requested algorithm '%s' is not valid/supported.", algorithm);
             if (log.isDebugEnabled()) {
                 log.debug(errorMessage);
             }
@@ -337,29 +361,7 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
         }
     }
 
-    protected byte[] encrypt(byte[] data, Key encryptionKey, Mechanism encryptionMechanism) throws CryptoException {
-
-        Session session = initiateSession();
-        Cipher cipher = new Cipher(session);
-        try {
-            return cipher.encrypt(data, encryptionKey, encryptionMechanism);
-        } finally {
-            sessionHandler.closeSession(session);
-        }
-    }
-
-    protected byte[] decrypt(byte[] data, Key decryptionKey, Mechanism decryptionMechanism) throws CryptoException {
-
-        Session session = initiateSession();
-        Cipher cipher = new Cipher(session);
-        try {
-            return cipher.decrypt(data, decryptionKey, decryptionMechanism);
-        } finally {
-            sessionHandler.closeSession(session);
-        }
-    }
-
-    protected SecretKey getSymmetricKey(String algorithm, byte[] value, boolean encryptMode) throws CryptoException {
+    protected SecretKey getSymmetricKey(Session session, String algorithm, byte[] value, boolean encryptMode) throws CryptoException {
 
         String[] keySpecification = algorithm.split("/")[0].split("_");
         String keyType = keySpecification[0];
@@ -378,7 +380,7 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
                 secretKeyTemplate = KeyTemplateGenerator.generateDESKeyTemplate();
             } else if (keyType.equals("DES2")) {
                 secretKeyTemplate = KeyTemplateGenerator.generateDES2KeyTemplate();
-            } else if (keyType.equals("3DES")) {
+            } else if (keyType.equals("3DES") || keyType.equals("DESede")) {
                 secretKeyTemplate = KeyTemplateGenerator.generateDES3KeyTemplate();
             } else {
                 throw new CryptoException(errorMessage);
@@ -400,22 +402,18 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
                 throw new CryptoException(errorMessage);
             }
         }
-        return generateKey(secretKeyTemplate, encryptMode, keyType);
+        return generateKey(secretKeyTemplate, encryptMode, keyType, session);
     }
 
-    protected SecretKey generateKey(SecretKey secretKeyTemplate, boolean encryptMode, String keyGenAlgo) throws CryptoException {
+    protected SecretKey generateKey(SecretKey secretKeyTemplate, boolean encryptMode, String keyGenAlgo, Session
+            session) throws CryptoException {
 
-        Session session = initiateSession();
         KeyHandler keyHandler = new KeyHandler(session);
-        try {
-            if (encryptMode) {
-                return keyHandler.generateSecretKey(secretKeyTemplate, mechanismResolver.resolveMechanism(
-                        new MechanismDataHolder(ENCRYPT_MODE, keyGenAlgo)));
-            } else {
-                return keyHandler.getSecretKeyHandle(secretKeyTemplate);
-            }
-        } finally {
-            sessionHandler.closeSession(session);
+        if (encryptMode) {
+            return keyHandler.generateSecretKey(secretKeyTemplate, mechanismResolver.resolveMechanism(
+                    new MechanismDataHolder(ENCRYPT_MODE, keyGenAlgo)));
+        } else {
+            return keyHandler.getSecretKeyHandle(secretKeyTemplate);
         }
     }
 

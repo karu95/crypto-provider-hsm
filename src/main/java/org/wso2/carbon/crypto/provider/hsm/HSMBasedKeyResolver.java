@@ -32,11 +32,15 @@ public class HSMBasedKeyResolver extends KeyResolver {
 
         String keyAlias;
         String keyPassword;
-        if (SUPER_TENANT_ID == cryptoContext.getTenantId()) {
+        if ((cryptoContext.getIdentifier() == null) && (SUPER_TENANT_ID == cryptoContext.getTenantId())) {
             keyAlias = serverConfigurationService.getFirstProperty(PRIMARY_KEYSTORE_KEY_ALIAS_PROPERTY_PATH);
             keyPassword = serverConfigurationService.getFirstProperty(PRIMARY_KEYSTORE_KEY_PASSWORD_PROPERTY_PATH);
         } else {
-            keyAlias = cryptoContext.getTenantDomain();
+            if (cryptoContext.getIdentifier() != null) {
+                keyAlias = cryptoContext.getTenantDomain() + "_" + cryptoContext.getIdentifier();
+            } else {
+                keyAlias = cryptoContext.getTenantDomain();
+            }
             keyPassword = null; // Key password will be internally handled by the KeyStoreManager
         }
 
@@ -46,6 +50,11 @@ public class HSMBasedKeyResolver extends KeyResolver {
     @Override
     public CertificateInfo getCertificateInfo(CryptoContext cryptoContext) {
 
-        return new CertificateInfo(cryptoContext.getTenantDomain(), null);
+        if (cryptoContext.getIdentifier() == null) {
+            return new CertificateInfo(cryptoContext.getTenantDomain(), null);
+        } else {
+            return new CertificateInfo(cryptoContext.getTenantDomain() + "_" + cryptoContext.getIdentifier(),
+                    null);
+        }
     }
 }

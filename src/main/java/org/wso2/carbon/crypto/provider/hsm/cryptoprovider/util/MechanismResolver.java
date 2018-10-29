@@ -32,6 +32,7 @@ public class MechanismResolver {
         put("DES", PKCS11Constants.CKM_DES_KEY_GEN);
         put("DES2", PKCS11Constants.CKM_DES2_KEY_GEN);
         put("3DES", PKCS11Constants.CKM_DES3_KEY_GEN);
+        put("DESede", PKCS11Constants.CKM_DES3_KEY_GEN);
 
         /*
          * Encrypt/Decrypt mechanisms
@@ -43,8 +44,11 @@ public class MechanismResolver {
 
         //DES3 mechanisms
         put("DESede/CBC/NoPadding", PKCS11Constants.CKM_DES3_CBC);
+        put("3DES/CBC/NoPadding", PKCS11Constants.CKM_DES3_CBC);
         put("DESede/CBC/PKCS5Padding", PKCS11Constants.CKM_DES3_CBC_PAD);
+        put("3DES/CBC/PKCS5Padding", PKCS11Constants.CKM_DES3_CBC_PAD);
         put("DESede/ECB/NoPadding", PKCS11Constants.CKM_DES3_ECB);
+        put("3DES/ECB/NoPadding", PKCS11Constants.CKM_DES3_ECB);
 
         //AES mechanisms
         put("AES/CBC/NoPadding", PKCS11Constants.CKM_AES_CBC);
@@ -200,9 +204,8 @@ public class MechanismResolver {
             mechanism.setParameters(getInitializationVectorParameters((IvParameterSpec) mechanismDataHolder
                     .getAlgorithmParameterSpec(), mechanismDataHolder.getOperatingMode(), ivSize));
         } else if (parameterSpec.startsWith("GCM")) {
-            int ivSize = Integer.parseInt(parameterSpec.substring(2, parameterSpec.length()));
             mechanism.setParameters(getGCMParameters((GCMParameterSpec) mechanismDataHolder.getAlgorithmParameterSpec(),
-                    mechanismDataHolder.getOperatingMode(), 96, mechanismDataHolder.getAuthData()));
+                    mechanismDataHolder.getOperatingMode(), 12, mechanismDataHolder.getAuthData()));
         }
     }
 
@@ -263,7 +266,7 @@ public class MechanismResolver {
         if (operatingMode == ENCRYPT_MODE) {
             return new GcmParameters(generateIV(ivSize), authData, 128);
         } else if (operatingMode == DECRYPT_MODE) {
-            if (gcmParameterSpec == null) {
+            if (gcmParameterSpec != null) {
                 return new GcmParameters(gcmParameterSpec.getIV(), authData, gcmParameterSpec.getTLen());
             } else {
                 String errorMessage = "GCM Parameters can't be null.";

@@ -49,7 +49,7 @@ public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
         this.serverConfigurationService = serverConfigurationService;
         this.keyAlias = serverConfigurationService.getFirstProperty(HSM_BASED_INTERNAL_PROVIDER_KEY_ALIAS_PATH);
         if (StringUtils.isBlank(keyAlias)) {
-            throw new CryptoException("Key alias provided for internal crypto needs can't be null.");
+            throw new CryptoException("Key alias provided for internal crypto needs can't be empty.");
         }
         sessionHandler = SessionHandler.getDefaultSessionHandler(serverConfigurationService);
         mechanismResolver = MechanismResolver.getInstance();
