@@ -306,7 +306,7 @@ public class HSMBasedExternalCryptoProvider implements ExternalCryptoProvider {
             } else {
                 return cipher.decrypt(hybridDecryptionInput.getCipherData(), decryptionKey, decryptionMechanism);
             }
-        }finally {
+        } finally {
             sessionHandler.closeSession(session);
         }
     }

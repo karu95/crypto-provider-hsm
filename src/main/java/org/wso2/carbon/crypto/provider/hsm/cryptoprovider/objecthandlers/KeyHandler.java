@@ -22,7 +22,7 @@ public class KeyHandler {
     /**
      * Constructor of key handler instance.
      *
-     * @param session
+     * @param session : Session associated to handle the key related operation.
      */
     public KeyHandler(Session session) {
         this.session = session;
@@ -56,7 +56,7 @@ public class KeyHandler {
     }
 
     /**
-     * Generates asymmetric keys conforming to given secret key template.
+     * Generates symmetric keys conforming to given secret key template.
      *
      * @param secretKeyTemplate : Template of the key that needs to be generated.
      * @param mechanism         : Key generation mechanism.

@@ -8,10 +8,15 @@ import iaik.pkcs.pkcs11.objects.SecretKey;
 
 
 /**
- * This class generates Key templates required for key generation.
+ * This class generates symmetric key templates required for symmetric key generation.
  */
 public class KeyTemplateGenerator {
 
+    /**
+     * Generates a {@link AESSecretKey} template with required attributes.
+     *
+     * @return {@link AESSecretKey} template.
+     */
     public static AESSecretKey generateAESKeyTemplate() {
 
         AESSecretKey aesSecretKeyTemplate = new AESSecretKey();
@@ -19,6 +24,11 @@ public class KeyTemplateGenerator {
         return aesSecretKeyTemplate;
     }
 
+    /**
+     * Generates a {@link DESSecretKey} template with required attributes.
+     *
+     * @return {@link DESSecretKey} template.
+     */
     public static DESSecretKey generateDESKeyTemplate() {
 
         DESSecretKey desSecretKeyTemplate = new DESSecretKey();
@@ -26,6 +36,11 @@ public class KeyTemplateGenerator {
         return desSecretKeyTemplate;
     }
 
+    /**
+     * Generates a {@link DES3SecretKey} template with required attributes.
+     *
+     * @return {@link DES3SecretKey} template.
+     */
     public static DES3SecretKey generateDES3KeyTemplate() {
 
         DES3SecretKey des3SecretKeyTemplate = new DES3SecretKey();
@@ -33,6 +48,11 @@ public class KeyTemplateGenerator {
         return des3SecretKeyTemplate;
     }
 
+    /**
+     * Generates a {@link DES2SecretKey} template with required attributes.
+     *
+     * @return {@link DES2SecretKey} template.
+     */
     public static DES2SecretKey generateDES2KeyTemplate() {
 
         DES2SecretKey des2SecretKeyTemplate = new DES2SecretKey();

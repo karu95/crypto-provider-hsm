@@ -20,7 +20,7 @@ public class CertificateHandler {
     /**
      * Constructor of CertificateHandler instance.
      *
-     * @param session
+     * @param session : Session associated to handle the certificate related operation.
      */
     public CertificateHandler(Session session) {
         this.session = session;

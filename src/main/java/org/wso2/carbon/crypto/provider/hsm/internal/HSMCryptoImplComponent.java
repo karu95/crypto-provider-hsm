@@ -38,7 +38,7 @@ public class HSMCryptoImplComponent {
     private ServerConfigurationService serverConfigurationService;
 
     @Activate
-    public void activate(ComponentContext context) {
+    protected void activate(ComponentContext context) {
 
         if (!isCryptoServiceEnabled()) {
             if (log.isDebugEnabled()) {
@@ -63,7 +63,7 @@ public class HSMCryptoImplComponent {
     }
 
     @Deactivate
-    public void deactivate(ComponentContext context) {
+    protected void deactivate(ComponentContext context) {
 
         hsmBasedExternalCryptoProviderServiceRegistration.unregister();
         hsmBasedInternalCryptoProviderServiceRegistration.unregister();
@@ -76,12 +76,12 @@ public class HSMCryptoImplComponent {
             cardinality = ReferenceCardinality.MANDATORY,
             unbind = "unsetServerConfigurationService"
     )
-    public void setServerConfigurationService(ServerConfigurationService serverConfigurationService) {
+    protected void setServerConfigurationService(ServerConfigurationService serverConfigurationService) {
 
         this.serverConfigurationService = serverConfigurationService;
     }
 
-    public void unsetServerConfigurationService(ServerConfigurationService serverConfigurationService) {
+    protected void unsetServerConfigurationService(ServerConfigurationService serverConfigurationService) {
 
         this.serverConfigurationService = null;
     }
@@ -89,7 +89,6 @@ public class HSMCryptoImplComponent {
     protected boolean isCryptoServiceEnabled() {
 
         String enabled = serverConfigurationService.getFirstProperty(CRYPTO_SERVICE_ENABLING_PROPERTY_PATH);
-
         if (!StringUtils.isBlank(enabled)) {
 
             if (StringUtils.equals(enabled, "true")) {
@@ -112,21 +111,22 @@ public class HSMCryptoImplComponent {
         hsmBasedExternalCryptoProviderServiceRegistration = bundleContext.
                 registerService(ExternalCryptoProvider.class, hsmBasedExternalCryptoProvider, null);
         String infoMessage = "'%s' has been registered.";
-        if (log.isInfoEnabled()) {
-            log.info(String.format(infoMessage, "HSMBasedExternalCryptoProvider"));
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(infoMessage, "HSMBasedExternalCryptoProvider"));
         }
 
         hsmBasedInternalCryptoProviderServiceRegistration = bundleContext.
                 registerService(InternalCryptoProvider.class, hsmBasedInternalCryptoProvider, null);
 
-        if (log.isInfoEnabled()) {
-            log.info(String.format(infoMessage, "HSMBasedInternalCryptoProvider"));
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(infoMessage, "HSMBasedInternalCryptoProvider"));
         }
 
-        hsmBasedKeyResolverServiceRegistration = bundleContext.registerService(KeyResolver.class, hsmBasedKeyResolver, null);
+        hsmBasedKeyResolverServiceRegistration = bundleContext.
+                registerService(KeyResolver.class, hsmBasedKeyResolver, null);
 
-        if (log.isInfoEnabled()) {
-            log.info(String.format(infoMessage, "HSMBasedKeyResolver"));
+        if (log.isDebugEnabled()) {
+            log.debug(String.format(infoMessage, "HSMBasedKeyResolver"));
         }
     }
 
@@ -134,7 +134,6 @@ public class HSMCryptoImplComponent {
 
         HSMBasedExternalCryptoProvider hsmBasedExternalCryptoProvider =
                 new HSMBasedExternalCryptoProvider(this.serverConfigurationService);
-
         return hsmBasedExternalCryptoProvider;
     }
 
@@ -142,14 +141,12 @@ public class HSMCryptoImplComponent {
 
         HSMBasedInternalCryptoProvider hsmBasedInternalCryptoProvider =
                 new HSMBasedInternalCryptoProvider(this.serverConfigurationService);
-
         return hsmBasedInternalCryptoProvider;
     }
 
     protected HSMBasedKeyResolver getHSMBasedKeyResolver() {
 
         HSMBasedKeyResolver hsmBasedKeyResolver = new HSMBasedKeyResolver(this.serverConfigurationService);
-
         return hsmBasedKeyResolver;
     }
 }

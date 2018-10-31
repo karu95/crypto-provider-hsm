@@ -21,6 +21,8 @@ public class Cipher {
 
     /**
      * Constructor of a Cipher instance.
+     *
+     * @param session : Session used for the encryption/decryption operation.
      */
     public Cipher(Session session) {
         this.session = session;
