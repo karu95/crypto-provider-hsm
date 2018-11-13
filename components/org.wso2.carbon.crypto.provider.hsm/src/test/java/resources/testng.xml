@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!--
+  ~ Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+  ~
+  ~ WSO2 Inc. licenses this file to you under the Apache License,
+  ~ Version 2.0 (the "License"); you may not use this file except
+  ~ in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied. See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
+
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd">
+<suite thread-count="1" verbose="0" name="Surefire suite">
+    <test name="Surefire test">
+        <classes>
+            <class name="org.wso2.carbon.crypto.provider.hsm.HSMBasedInternalCryptoProviderTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.HSMBasedKeyResolverTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.cryptoprovider.util.KeyTemplateGeneratorTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.cryptoprovider.util.MechanismResolverTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.cryptoprovider.util.SessionHandlerTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.cryptoprovider.objecthandlers.CertificateHandlerTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.cryptoprovider.objecthandlers.KeyHandlerTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.cryptoprovider.operators.CipherTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.cryptoprovider.operators.SignatureHandlerTest"/>
+            <class name="org.wso2.carbon.crypto.provider.hsm.HSMBasedExternalCryptoProviderTest"/>
+        </classes>
+    </test>
+</suite>
