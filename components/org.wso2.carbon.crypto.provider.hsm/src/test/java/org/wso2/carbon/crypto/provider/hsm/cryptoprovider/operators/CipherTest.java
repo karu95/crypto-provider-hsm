@@ -68,7 +68,7 @@ public class CipherTest {
     public void setUp() {
 
         try {
-            session = sessionHandler.initiateSession(0, false);
+            session = sessionHandler.initiateSession(0, null,false);
             keyHandler = new KeyHandler(session);
             cipher = new Cipher(session);
         } catch (CryptoException e) {

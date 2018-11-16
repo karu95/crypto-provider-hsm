@@ -22,6 +22,7 @@ import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Session;
 import iaik.pkcs.pkcs11.TokenException;
 import iaik.pkcs.pkcs11.objects.Key;
+import iaik.pkcs.pkcs11.objects.PublicKey;
 import iaik.pkcs.pkcs11.objects.SecretKey;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -101,19 +102,19 @@ public class KeyHandler {
     /**
      * When an external key is used for a cryptographic operation,
      * it is necessary get a object handle from HSM for the key.
-     * This creates handle for the given {@link SecretKey} inside the HSM.
+     * This creates handle for the given {@link Key} inside the HSM.
      *
-     * @param secretKey : The key which requires a handle
-     * @return : {@link SecretKey}
+     * @param key : The key which requires a handle.
+     * @return : {@link Key} with object handle. This is a session object.
      * @throws HSMCryptoException
      */
-    public SecretKey getSecretKeyHandle(SecretKey secretKey) throws HSMCryptoException {
+    public Key getKeyHandle(Key key) throws HSMCryptoException {
 
         try {
-            return (SecretKey) session.createObject(secretKey);
+            return (Key) session.createObject(key);
         } catch (TokenException e) {
             String errorMessage = String.format("Error occurred while generating an object handle for given %s " +
-                    "secret key.", String.valueOf(secretKey.getLabel().getCharArrayValue()));
+                    "key.", String.valueOf(key.getLabel().getCharArrayValue()));
             throw new HSMCryptoException(errorMessage, e);
         }
     }

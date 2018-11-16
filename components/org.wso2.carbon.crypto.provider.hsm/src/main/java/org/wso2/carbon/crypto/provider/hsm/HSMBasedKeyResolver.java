@@ -37,7 +37,9 @@ public class HSMBasedKeyResolver extends KeyResolver {
     private ServerConfigurationService serverConfigurationService;
 
     /**
-     * @param serverConfigurationService
+     * Constructor of HSM based key resolver.
+     *
+     * @param serverConfigurationService : carbon.xml configuration is provided using this service.
      */
     public HSMBasedKeyResolver(ServerConfigurationService serverConfigurationService) {
 

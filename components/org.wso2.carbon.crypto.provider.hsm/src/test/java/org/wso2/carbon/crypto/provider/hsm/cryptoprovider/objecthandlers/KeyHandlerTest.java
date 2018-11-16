@@ -58,7 +58,7 @@ public class KeyHandlerTest {
     public void setUp() {
 
         try {
-            session = sessionHandler.initiateSession(0, true);
+            session = sessionHandler.initiateSession(0, null,true);
             keyHandler = new KeyHandler(session);
         } catch (CryptoException e) {
             System.out.println("Error occurred while initiating a session : " + e.getMessage());
@@ -163,7 +163,7 @@ public class KeyHandlerTest {
     public void testGetSecretKeyHandle(SecretKey secretKey) {
 
         try {
-            SecretKey secretKeyWithHandle = keyHandler.getSecretKeyHandle(secretKey);
+            SecretKey secretKeyWithHandle = (SecretKey) keyHandler.getKeyHandle(secretKey);
             Assert.assertTrue(secretKeyWithHandle.getObjectHandle() != -1);
             Assert.assertNotNull(secretKeyWithHandle.getCheckValue().getByteArrayValue());
         } catch (HSMCryptoException e) {

@@ -60,7 +60,7 @@ public class SignatureHandlerTest {
     public void setUp() {
 
         try {
-            session = sessionHandler.initiateSession(0, false);
+            session = sessionHandler.initiateSession(0, null,false);
             signatureHandler = new SignatureHandler(session);
             keyHandler = new KeyHandler(session);
         } catch (CryptoException e) {

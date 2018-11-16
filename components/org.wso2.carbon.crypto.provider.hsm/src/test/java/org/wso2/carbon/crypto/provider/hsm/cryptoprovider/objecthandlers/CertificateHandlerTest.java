@@ -47,7 +47,7 @@ public class CertificateHandlerTest {
     public void setUp() {
 
         try {
-            session = sessionHandler.initiateSession(0, false);
+            session = sessionHandler.initiateSession(0, null,false);
             certificateHandler = new CertificateHandler(session);
         } catch (CryptoException e) {
             System.out.println("Error occurred while initiating a session : " + e.getMessage());

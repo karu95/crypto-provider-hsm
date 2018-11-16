@@ -44,17 +44,15 @@ import static org.wso2.carbon.crypto.provider.hsm.cryptoprovider.util.CryptoCons
  */
 public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
 
-    private static final String INTERNAL_PROVIDER_SLOT_PROPERTY_PATH =
-            "CryptoService.HSMBasedCryptoProviderConfig.InternalProvider.InternalProviderSlotID";
     private static final String HSM_BASED_INTERNAL_PROVIDER_KEY_ALIAS_PATH =
             "CryptoService.HSMBasedCryptoProviderConfig.InternalProvider.KeyAlias";
 
     private static Log log = LogFactory.getLog(HSMBasedInternalCryptoProvider.class);
 
-    private ServerConfigurationService serverConfigurationService;
     private String keyAlias;
     private SessionHandler sessionHandler;
     private MechanismResolver mechanismResolver;
+    private SlotResolver slotResolver;
 
     /**
      * Constructor of HSMBasedInternalCryptoProvider. This is an asymmetric crypto provider which caters
@@ -65,13 +63,13 @@ public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
     public HSMBasedInternalCryptoProvider(ServerConfigurationService serverConfigurationService)
             throws CryptoException {
 
-        this.serverConfigurationService = serverConfigurationService;
         this.keyAlias = serverConfigurationService.getFirstProperty(HSM_BASED_INTERNAL_PROVIDER_KEY_ALIAS_PATH);
         if (StringUtils.isBlank(keyAlias)) {
             throw new CryptoException("Key/Certificate aliases provided for internal crypto provider can't be empty.");
         }
         sessionHandler = SessionHandler.getDefaultSessionHandler(serverConfigurationService);
         mechanismResolver = MechanismResolver.getInstance();
+        slotResolver = new DefaultSlotResolver(serverConfigurationService);
     }
 
     /**
@@ -93,7 +91,7 @@ public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
         publicKeyTemplate.getObjectClass().setLongValue(PKCS11Constants.CKO_PUBLIC_KEY);
         Mechanism encryptionMechanism = mechanismResolver.resolveMechanism(
                 new MechanismDataHolder(ENCRYPT_MODE, algorithm));
-        Session session = initiateSession();
+        Session session = initiateSession(slotResolver.resolveSlot(null));
         PublicKey encryptionKey = (PublicKey) retrieveKey(publicKeyTemplate, session);
         Cipher cipher = new Cipher(session);
         try {
@@ -123,7 +121,7 @@ public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
         privateKeyTemplate.getObjectClass().setLongValue(PKCS11Constants.CKO_PRIVATE_KEY);
         Mechanism decryptionMechanism = mechanismResolver.resolveMechanism(
                 new MechanismDataHolder(DECRYPT_MODE, algorithm));
-        Session session = initiateSession();
+        Session session = initiateSession(slotResolver.resolveSlot(null));
         PrivateKey decryptionKey = (PrivateKey) retrieveKey(privateKeyTemplate, session);
         Cipher cipher = new Cipher(session);
         try {
@@ -133,11 +131,9 @@ public class HSMBasedInternalCryptoProvider implements InternalCryptoProvider {
         }
     }
 
-    protected Session initiateSession() throws CryptoException {
+    protected Session initiateSession(SlotInfo slotInfo) throws CryptoException {
 
-        return sessionHandler.initiateSession(
-                Integer.parseInt(serverConfigurationService.getFirstProperty(INTERNAL_PROVIDER_SLOT_PROPERTY_PATH)),
-                false);
+        return sessionHandler.initiateSession(slotInfo.getSlotID(), slotInfo.getPin(), false);
     }
 
     protected void failIfMethodParametersInvalid(String algorithm, byte[] data)

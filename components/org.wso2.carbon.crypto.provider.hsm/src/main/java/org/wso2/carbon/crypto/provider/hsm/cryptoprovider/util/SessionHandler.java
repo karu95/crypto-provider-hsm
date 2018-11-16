@@ -99,7 +99,7 @@ public class SessionHandler {
      * @return Instance of a Session.
      * @throws CryptoException
      */
-    public Session initiateSession(int slotNo, boolean readWriteSession) throws CryptoException {
+    public Session initiateSession(int slotNo, String slotPIN, boolean readWriteSession) throws CryptoException {
 
         if (slotsWithTokens == null) {
             try {
@@ -118,7 +118,11 @@ public class SessionHandler {
                 Token token = slot.getToken();
                 Session session = token.openSession(Token.SessionType.SERIAL_SESSION,
                         readWriteSession, null, null);
-                session.login(Session.UserType.USER, getUserPIN(slotNo));
+                if (slotPIN == null) {
+                    session.login(Session.UserType.USER, getUserPIN(slotNo));
+                } else {
+                    session.login(Session.UserType.USER, slotPIN.toCharArray());
+                }
                 return session;
             } catch (TokenException e) {
                 String errorMessage = String.format("Session initiation failed for slot id : '%d' ", slotNo);

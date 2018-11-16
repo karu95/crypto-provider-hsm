@@ -49,7 +49,7 @@ public class SessionHandlerTest {
     public void testInitiateSession(int slotNo, boolean readWrite) {
 
         try {
-            Session session = sessionHandler.initiateSession(slotNo, readWrite);
+            Session session = sessionHandler.initiateSession(slotNo, null, readWrite);
             Assert.assertTrue((session.getSessionInfo().isRwSession() == readWrite));
             //Close the created session.
             sessionHandler.closeSession(session);
