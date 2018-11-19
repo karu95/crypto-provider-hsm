@@ -5,6 +5,8 @@ import iaik.pkcs.pkcs11.objects.PrivateKey;
 import iaik.pkcs.pkcs11.objects.RSAPrivateKey;
 import iaik.pkcs.pkcs11.objects.RSAPublicKey;
 import iaik.pkcs.pkcs11.objects.X509PublicKeyCertificate;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.wso2.carbon.crypto.api.CryptoException;
 
 import java.io.ByteArrayInputStream;
@@ -19,13 +21,27 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.RSAPrivateKeySpec;
 
+/**
+ * This class maps PKCS 11 certificates and private keys to JCE certificates and private keys and vice versa.
+ */
 public class PKCS11JCEObjectMapper {
 
+    private static Log log = LogFactory.getLog(PKCS11JCEObjectMapper.class);
+
+    /**
+     * This static method maps JCE certificate to PKCS 11 certificate.
+     *
+     * @param certificate : JCE Certificate
+     * @return PKCS11 Certificate data {@link PKCS11CertificateData}.
+     * @throws CryptoException
+     */
     public static PKCS11CertificateData mapCertificateJCEToPKCS11(java.security.cert.Certificate certificate)
             throws CryptoException {
 
         if (!(certificate instanceof X509Certificate)) {
-            throw new CryptoException();
+            String errorMessage = "This doesn't support for conversion of certificates in the provided format.";
+            log.error(errorMessage);
+            throw new CryptoException(errorMessage);
         }
 
         X509Certificate x509Certificate = (X509Certificate) certificate;
@@ -36,21 +52,31 @@ public class PKCS11JCEObjectMapper {
         try {
             cert.getValue().setByteArrayValue(x509Certificate.getEncoded());
         } catch (CertificateEncodingException e) {
-            throw new CryptoException();
+            String errorMessage = "Error occured while encoding the certificate.";
+            throw new CryptoException(errorMessage, e);
         }
 
         PublicKey publicKey = certificate.getPublicKey();
         if (!(publicKey instanceof java.security.interfaces.RSAPublicKey)) {
-            throw new CryptoException();
+            String errorMessage = "Implementation supports only for RSA public key conversions.";
+            log.error(errorMessage);
+            throw new CryptoException(errorMessage);
         }
         java.security.interfaces.RSAPublicKey rsaPublicKeySpec = (java.security.interfaces.RSAPublicKey) publicKey;
         RSAPublicKey rsaPublicKey = new RSAPublicKey();
+        rsaPublicKey.getSubject().setByteArrayValue(x509Certificate.getSubjectX500Principal().getEncoded());
         rsaPublicKey.getModulus().setByteArrayValue(rsaPublicKeySpec.getModulus().toByteArray());
         rsaPublicKey.getPublicExponent().setByteArrayValue(rsaPublicKeySpec.getPublicExponent().toByteArray());
-
         return new PKCS11CertificateData(cert, rsaPublicKey);
     }
 
+    /**
+     * This static method maps PKCS 11 certificate to JCE certificate.
+     *
+     * @param certificate : PKCS11 certificate.
+     * @return JCE certificate {@link java.security.cert.Certificate}.
+     * @throws CryptoException
+     */
     public static java.security.cert.Certificate mapCertificatePKCS11ToJCE(Certificate certificate)
             throws CryptoException {
 
@@ -71,10 +97,19 @@ public class PKCS11JCEObjectMapper {
         }
     }
 
+    /**
+     * This static method maps JCE private key to PKCS 11 private key.
+     *
+     * @param privateKey : JCE private key.
+     * @return PKCS 11 private key {@link PrivateKey}.
+     * @throws CryptoException
+     */
     public static PrivateKey mapPrivateKeyJCEToPKCS11(java.security.PrivateKey privateKey) throws CryptoException {
 
         if (!(privateKey instanceof java.security.interfaces.RSAPrivateKey)) {
-            throw new CryptoException();
+            String errorMessage = "Implementation supports only for RSA private key conversions.";
+            log.error(errorMessage);
+            throw new CryptoException(errorMessage);
         }
 
         java.security.interfaces.RSAPrivateKey rsaPrivateKeySpec = (java.security.interfaces.RSAPrivateKey) privateKey;
@@ -84,11 +119,19 @@ public class PKCS11JCEObjectMapper {
         return rsaPrivateKey;
     }
 
+    /**
+     * This static method maps PKCS 11 private key to JCE private key.
+     *
+     * @param privateKey : PKCS 11 Private key.
+     * @return JCE private key {@link java.security.PrivateKey}.
+     * @throws CryptoException
+     */
     public static java.security.PrivateKey mapPrivateKeyPKCS11ToJCE(PrivateKey privateKey) throws CryptoException {
 
         if (!(privateKey instanceof RSAPrivateKey)) {
             String errorMessage = String.format("Retrieved private key %s is not a RSA Private Key.",
                     new String(privateKey.getLabel().getCharArrayValue()));
+            log.error(errorMessage);
             throw new CryptoException(errorMessage);
         }
 
