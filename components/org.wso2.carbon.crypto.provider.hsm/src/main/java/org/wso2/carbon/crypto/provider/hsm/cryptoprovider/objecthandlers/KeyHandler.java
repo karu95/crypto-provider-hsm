@@ -22,7 +22,6 @@ import iaik.pkcs.pkcs11.Mechanism;
 import iaik.pkcs.pkcs11.Session;
 import iaik.pkcs.pkcs11.TokenException;
 import iaik.pkcs.pkcs11.objects.Key;
-import iaik.pkcs.pkcs11.objects.PublicKey;
 import iaik.pkcs.pkcs11.objects.SecretKey;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -115,6 +114,18 @@ public class KeyHandler {
         } catch (TokenException e) {
             String errorMessage = String.format("Error occurred while generating an object handle for given %s " +
                     "key.", String.valueOf(key.getLabel().getCharArrayValue()));
+            throw new HSMCryptoException(errorMessage, e);
+        }
+    }
+
+    public void storeKey(Key key) throws HSMCryptoException {
+
+        key.getToken().setBooleanValue(true);
+        try {
+            session.createObject(key);
+        } catch (TokenException e) {
+            String errorMessage = String.format("Error occurred while storing %s key in HSM device.",
+                    new String(key.getLabel().getCharArrayValue()));
             throw new HSMCryptoException(errorMessage, e);
         }
     }

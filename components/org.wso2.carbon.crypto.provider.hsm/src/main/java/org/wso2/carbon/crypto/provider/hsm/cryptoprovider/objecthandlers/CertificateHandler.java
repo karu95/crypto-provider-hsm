@@ -72,4 +72,16 @@ public class CertificateHandler {
             throw new HSMCryptoException(errorMessage, e);
         }
     }
+
+    public void storeCertificate(Certificate certificate) throws HSMCryptoException {
+
+        certificate.getToken().setBooleanValue(true);
+        try {
+            session.createObject(certificate);
+        } catch (TokenException e) {
+            String errorMessage = String.format("Error occurred while storing %s certificate in HSM device.",
+                    new String(certificate.getLabel().getCharArrayValue()));
+            throw new HSMCryptoException(errorMessage, e);
+        }
+    }
 }

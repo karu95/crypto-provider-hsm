@@ -177,7 +177,7 @@ public class SessionHandler {
 
     protected void setupSlotConfiguration() throws CryptoException {
 
-        NodeList configuredSlotsCandidateNodes = this.serverConfigurationService.getDocumentElement().
+        NodeList configuredSlotsCandidateNodes = serverConfigurationService.getDocumentElement().
                 getElementsByTagName("SlotConfiguration");
         if (configuredSlotsCandidateNodes != null) {
             Node hsmSlotConfiguration = configuredSlotsCandidateNodes.item(0);

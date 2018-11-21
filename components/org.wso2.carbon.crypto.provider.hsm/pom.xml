@@ -38,8 +38,16 @@
             <artifactId>org.wso2.carbon.crypto.api</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.wso2.carbon</groupId>
+            <artifactId>org.wso2.carbon.core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.eclipse.osgi</groupId>
             <artifactId>org.eclipse.osgi</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.wso2.carbon.commons</groupId>
+            <artifactId>org.wso2.carbon.tenant.common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.eclipse.osgi</groupId>
@@ -140,6 +148,8 @@
                             org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
                             org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
                             org.wso2.carbon.crypto.api; version="${carbon.crypto.api.imp.pkg.version.range}",
+                            org.wso2.carbon.stratos.common.*; version="${carbon.commons.imp.pkg.version}",
+                            org.wso2.carbon.core.util.*; version="${carbon.kernel.imp.pkg.version.range}",
                         </Import-Package>
                         <Export-Package>
                             !org.wso2.carbon.crypto.provider.hsm.internal,
