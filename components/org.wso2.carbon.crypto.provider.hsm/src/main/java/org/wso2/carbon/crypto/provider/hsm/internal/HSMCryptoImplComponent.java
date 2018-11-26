@@ -37,8 +37,6 @@ import org.wso2.carbon.crypto.api.KeyResolver;
 import org.wso2.carbon.crypto.provider.hsm.HSMBasedExternalCryptoProvider;
 import org.wso2.carbon.crypto.provider.hsm.HSMBasedInternalCryptoProvider;
 import org.wso2.carbon.crypto.provider.hsm.HSMBasedKeyResolver;
-import org.wso2.carbon.crypto.provider.hsm.HSMTenantMgtListener;
-import org.wso2.carbon.stratos.common.listeners.TenantMgtListener;
 
 /**
  * The class which is used to deal with the OSGi runtime for service registration and injection.
@@ -55,7 +53,6 @@ public class HSMCryptoImplComponent {
     private ServiceRegistration<ExternalCryptoProvider> hsmBasedExternalCryptoProviderServiceRegistration;
     private ServiceRegistration<InternalCryptoProvider> hsmBasedInternalCryptoProviderServiceRegistration;
     private ServiceRegistration<KeyResolver> hsmBasedKeyResolverServiceRegistration;
-    private ServiceRegistration<TenantMgtListener> tenantMgtListenerServiceRegistration;
     private ServerConfigurationService serverConfigurationService;
 
     @Activate
@@ -71,7 +68,6 @@ public class HSMCryptoImplComponent {
         try {
             BundleContext bundleContext = context.getBundleContext();
             registerProviderImplementations(bundleContext);
-            registerHSMTenantMgtListener(bundleContext);
         } catch (Throwable e) {
             String errorMessage = "An error occurred while activating HSM based crypto provider.";
             if (log.isErrorEnabled()) {
@@ -87,7 +83,6 @@ public class HSMCryptoImplComponent {
     @Deactivate
     protected void deactivate(ComponentContext context) {
 
-        tenantMgtListenerServiceRegistration.unregister();
         hsmBasedExternalCryptoProviderServiceRegistration.unregister();
         hsmBasedInternalCryptoProviderServiceRegistration.unregister();
         hsmBasedKeyResolverServiceRegistration.unregister();
@@ -171,12 +166,5 @@ public class HSMCryptoImplComponent {
 
         HSMBasedKeyResolver hsmBasedKeyResolver = new HSMBasedKeyResolver(this.serverConfigurationService);
         return hsmBasedKeyResolver;
-    }
-
-    protected void registerHSMTenantMgtListener(BundleContext bundleContext) throws CryptoException {
-
-        HSMTenantMgtListener hsmTenantMgtListener = new HSMTenantMgtListener(serverConfigurationService);
-        tenantMgtListenerServiceRegistration =
-                bundleContext.registerService(TenantMgtListener.class, hsmTenantMgtListener, null);
     }
 }

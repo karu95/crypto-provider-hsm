@@ -30,6 +30,12 @@ public class MechanismDataHolder {
     private AlgorithmParameterSpec algorithmParameterSpec;
     private byte[] authData;
 
+    /**
+     * Constructor of a {@link MechanismDataHolder} instance with only operating mode and algorithm specification.
+     *
+     * @param operatingMode             : Mode of cryptographic operation
+     * @param jceMechanismSpecification : Standard JCE name of the mechanism.
+     */
     public MechanismDataHolder(int operatingMode, String jceMechanismSpecification) {
 
         this.operatingMode = operatingMode;
@@ -38,6 +44,14 @@ public class MechanismDataHolder {
         this.authData = null;
     }
 
+    /**
+     * Constructor of a {@link MechanismDataHolder} instance with only operating mode, algorithm specification
+     * and algorithm parameters.
+     *
+     * @param operatingMode             : Mode of cryptographic operation
+     * @param jceMechanismSpecification : Standard JCE name of the mechanism.
+     * @param algorithmParameterSpec    : Algorithm parameter specification.
+     */
     public MechanismDataHolder(int operatingMode, String jceMechanismSpecification, AlgorithmParameterSpec algorithmParameterSpec) {
 
         this.operatingMode = operatingMode;
@@ -46,6 +60,15 @@ public class MechanismDataHolder {
         this.authData = null;
     }
 
+    /**
+     * Constructor of a {@link MechanismDataHolder} instance with only operating mode, algorithm specification,
+     * algorithm parameters and authentication data.
+     *
+     * @param operatingMode             : Mode of cryptographic operation
+     * @param jceMechanismSpecification : Standard JCE name of the mechanism.
+     * @param algorithmParameterSpec    : Algorithm parameter specification.
+     * @param authData                  : Authentication data.
+     */
     public MechanismDataHolder(int operatingMode, String jceMechanismSpecification, AlgorithmParameterSpec algorithmParameterSpec,
                                byte[] authData) {
 
@@ -55,6 +78,14 @@ public class MechanismDataHolder {
         this.authData = authData;
     }
 
+    /**
+     * Constructor of a {@link MechanismDataHolder} instance with only operating mode, algorithm specification,
+     * and authentication data.
+     *
+     * @param operatingMode             : Mode of cryptographic operation
+     * @param jceMechanismSpecification : Standard JCE name of the mechanism.
+     * @param authData                  : Authentication data.
+     */
     public MechanismDataHolder(int operatingMode, String jceMechanismSpecification, byte[] authData) {
 
         this.operatingMode = operatingMode;

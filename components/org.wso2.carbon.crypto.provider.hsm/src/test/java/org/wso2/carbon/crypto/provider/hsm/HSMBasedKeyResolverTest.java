@@ -72,7 +72,8 @@ public class HSMBasedKeyResolverTest {
         CertificateInfo certificateInfo = hsmBasedKeyResolver.getCertificateInfo(cryptoContext);
         if (SUPER_TENANT_ID == cryptoContext.getTenantId()) {
             Assert.assertEquals(certificateInfo.getCertificateAlias(),
-                    serverConfigurationService.getFirstProperty(PRIMARY_KEYSTORE_KEY_ALIAS_PROPERTY_PATH));;
+                    serverConfigurationService.getFirstProperty(PRIMARY_KEYSTORE_KEY_ALIAS_PROPERTY_PATH));
+            ;
         } else {
             Assert.assertEquals(certificateInfo.getCertificateAlias(), cryptoContext.getTenantDomain());
         }

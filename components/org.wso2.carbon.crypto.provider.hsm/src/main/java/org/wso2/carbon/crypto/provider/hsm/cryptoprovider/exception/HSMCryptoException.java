@@ -29,11 +29,20 @@ public class HSMCryptoException extends CryptoException {
 
     private String errorCode;
 
+    /**
+     * Default constructor of an exception.
+     */
     public HSMCryptoException() {
 
         super();
     }
 
+    /**
+     * Constructor of {@link HSMCryptoException}.
+     *
+     * @param message : Error message.
+     * @param e       : Exception thrown.
+     */
     public HSMCryptoException(String message, Throwable e) {
 
         super(message, e);

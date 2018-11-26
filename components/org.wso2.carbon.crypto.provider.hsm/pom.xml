@@ -17,8 +17,8 @@
   ~ under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>crypto-provider-hsm</artifactId>
@@ -31,6 +31,7 @@
     <artifactId>org.wso2.carbon.crypto.provider.hsm</artifactId>
     <packaging>bundle</packaging>
     <name>WSO2 - HSM Based Crypto Provider</name>
+    <version>${parent.version}</version>
 
     <dependencies>
         <dependency>
@@ -38,16 +39,8 @@
             <artifactId>org.wso2.carbon.crypto.api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.wso2.carbon</groupId>
-            <artifactId>org.wso2.carbon.core</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.eclipse.osgi</groupId>
             <artifactId>org.eclipse.osgi</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.wso2.carbon.commons</groupId>
-            <artifactId>org.wso2.carbon.tenant.common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.wso2.eclipse.osgi</groupId>
@@ -148,11 +141,10 @@
                             org.osgi.framework; version="${osgi.framework.imp.pkg.version.range}",
                             org.osgi.service.component; version="${osgi.service.component.imp.pkg.version.range}",
                             org.wso2.carbon.crypto.api; version="${carbon.crypto.api.imp.pkg.version.range}",
-                            org.wso2.carbon.stratos.common.*; version="${carbon.commons.imp.pkg.version}",
-                            org.wso2.carbon.core.util.*; version="${carbon.kernel.imp.pkg.version.range}",
                         </Import-Package>
                         <Export-Package>
                             !org.wso2.carbon.crypto.provider.hsm.internal,
+                            org.wso2.carbon.crypto.provider.hsm.cryptoprovider; version="${project.version}",
                             org.wso2.carbon.crypto.provider.hsm.*; version="${project.version}",
                         </Export-Package>
                         <DynamicImport-Package>*</DynamicImport-Package>

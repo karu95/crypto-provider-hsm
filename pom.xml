@@ -255,8 +255,8 @@
                 <inherited>true</inherited>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>8</source>
+                    <target>8</target>
                 </configuration>
             </plugin>
         </plugins>
@@ -298,5 +298,6 @@
 
     <modules>
         <module>components/org.wso2.carbon.crypto.provider.hsm</module>
+        <module>components/org.wso2.carbon.crypto.tenant.hsmstore.mgt</module>
     </modules>
 </project>

@@ -165,7 +165,7 @@ public class MechanismResolver {
     }
 
     /**
-     * Singleton design pattern is used.
+     * Singleton design pattern is used. Only one instance of Mechanism resolver is used for mechanism resolving.
      *
      * @return {@link MechanismResolver} default instance.
      */

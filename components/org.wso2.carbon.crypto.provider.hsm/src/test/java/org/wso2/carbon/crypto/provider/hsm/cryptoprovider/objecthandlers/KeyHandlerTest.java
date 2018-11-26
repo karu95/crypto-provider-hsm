@@ -58,7 +58,7 @@ public class KeyHandlerTest {
     public void setUp() {
 
         try {
-            session = sessionHandler.initiateSession(0, null,true);
+            session = sessionHandler.initiateSession(0, null, true);
             keyHandler = new KeyHandler(session);
         } catch (CryptoException e) {
             System.out.println("Error occurred while initiating a session : " + e.getMessage());
@@ -94,7 +94,9 @@ public class KeyHandlerTest {
     }
 
     @DataProvider(name = "sampleKeyRetrievalData")
-    public Object[][] getSampleKeyData() { ;
+    public Object[][] getSampleKeyData() {
+
+        ;
 
         return new Object[][]{
                 {

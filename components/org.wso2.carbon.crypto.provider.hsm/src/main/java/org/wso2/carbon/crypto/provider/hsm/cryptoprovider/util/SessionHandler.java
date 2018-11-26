@@ -75,9 +75,9 @@ public class SessionHandler {
     }
 
     /**
-     * Singleton design pattern is used.
+     * Singleton design pattern is used. Only one instance of {@link SessionHandler} is used.
      *
-     * @param serverConfigurationService
+     * @param serverConfigurationService : Service to read carbon.xml configurations.
      * @return Default instance of SessionHandler.
      * @throws CryptoException
      */
